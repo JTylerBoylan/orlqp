@@ -19,6 +19,7 @@ target_include_directories(orlqp PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
+target_link_libraries(orlqp PUBLIC osqp::osqp Eigen3::Eigen)
 
 
 # Generate the necessary configuration files for find_package
