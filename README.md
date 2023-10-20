@@ -1,1 +1,1 @@
-# orlqp
+# ORLQP Library
