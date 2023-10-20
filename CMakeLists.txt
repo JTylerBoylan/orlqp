@@ -9,6 +9,8 @@ find_package(Eigen3 REQUIRED)
 include_directories(SYSTEM ${EIGEN3_INCLUDE_DIR})
 include_directories(include)
 
+list(APPEND CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+
 add_library(orlqp SHARED)
 target_sources(orlqp PRIVATE
     src/osqp.cpp
@@ -20,6 +22,9 @@ target_include_directories(orlqp PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(orlqp PUBLIC osqp::osqp Eigen3::Eigen)
+set_target_properties(orlqp PROPERTIES
+    INSTALL_RPATH_USE_LINK_PATH TRUE
+)
 
 
 # Generate the necessary configuration files for find_package
