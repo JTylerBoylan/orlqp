@@ -42,3 +42,12 @@ find_package(orlqp REQUIRED)
 ...
 target_link_libraries(my_executable PUBLIC orlqp::orlqp ...)
 ```
+
+## Docker (Dev)
+
+```
+sudo chmod +x run_dev.sh
+./run_dev.sh
+```
+
+*Or ./run_dev_cuda.sh for large matrices (thousands of decision variables)*
