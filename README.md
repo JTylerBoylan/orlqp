@@ -1,10 +1,8 @@
 # ORLQP Library
 
-## Installation
+## Dependencies
 
-### Dependencies
-
-#### CMake
+### CMake
 
 [Website](https://cmake.org/)
 
@@ -12,7 +10,7 @@
 sudo apt-get install -y cmake
 ```
 
-#### Eigen
+### Eigen
 
 [Website](https://eigen.tuxfamily.org/index.php?title=Main_Page)
 
@@ -20,11 +18,13 @@ sudo apt-get install -y cmake
 sudo apt-get install -y libeigen3-dev
 ```
 
-#### OSQP
+### OSQP
 
 [Github](https://github.com/osqp/osqp)
 
 [Website](https://osqp.org/)
+
+## Installation
 
 ### Build from source
 
