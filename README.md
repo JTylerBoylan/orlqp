@@ -8,7 +8,7 @@
 git clone https://github.com/JTylerBoylan/orlqp
 cd orlqp && mkdir build
 cd build && cmake ..
-cmake --build . --target install
+make install
 ```
 
 ### Add to CMake
