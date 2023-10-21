@@ -50,4 +50,4 @@ sudo chmod +x run_dev.sh
 ./run_dev.sh
 ```
 
-*Or ./run_dev_cuda.sh for large matrices (thousands of decision variables)*
+*Or `./run_dev_cuda.sh` for large matrices (thousands of decision variables)*

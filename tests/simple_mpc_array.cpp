@@ -27,7 +27,7 @@
 #define MAX_FORCE +5.0
 
 #define RANDOM_NOISE_GAIN 0.5
-#define NUMBER_OF_MPC_ITERATIONS 10000
+#define NUMBER_OF_MPC_ITERATIONS 100
 
 using namespace orlqp;
 
@@ -87,7 +87,7 @@ int main()
             const EigenVector x0 = mpc_i->state_dynamics * mpc_i->x0 +
                                    mpc_i->control_dynamics * (u0 + rand_force);
 
-            if (k % 10000 == 0)
+            if (k % 1 == 0)
             {
                 std::cout << "x0 = [" << x0.transpose() << "]\n";
             }
@@ -100,7 +100,7 @@ int main()
 
         const auto cend = std::chrono::high_resolution_clock::now();
 
-        if (k % 10000 == 0)
+        if (k % 1 == 0)
         {
             const time_t duration = std::chrono::duration_cast<std::chrono::microseconds>(cend - cstart).count();
             const double kHz = (double)(k * 1E3) / (double)(duration);

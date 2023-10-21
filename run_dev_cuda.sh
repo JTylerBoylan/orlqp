@@ -2,7 +2,7 @@
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-PROJECT_NAME="10-lib-cuda"
+PROJECT_NAME="orlqp-lib-cuda"
 
 docker build -t ${PROJECT_NAME} -f "${SCRIPT_DIR}/docker/Dockerfile.cuda" "${SCRIPT_DIR}"
 
