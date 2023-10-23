@@ -5,12 +5,12 @@
 #include "orlqp/OSQP.hpp"
 #include "orlqp/QPArrayProblem.hpp"
 
-#define NUMBER_OF_PROBLEMS 10
+#define NUMBER_OF_PROBLEMS 15
 
 #define NUMBER_OF_STATES 2
 #define NUMBER_OF_CONTROLS 1
 
-#define NUMBER_OF_NODES 11
+#define NUMBER_OF_NODES 15
 
 #define POSITION_ERROR_COST_WEIGHT 10.0
 #define VELOCITY_ERROR_COST_WEIGHT 1.0
@@ -27,7 +27,7 @@
 #define MAX_FORCE +5.0
 
 #define RANDOM_NOISE_GAIN 0.5
-#define NUMBER_OF_MPC_ITERATIONS 100
+#define NUMBER_OF_MPC_ITERATIONS 10000
 
 using namespace orlqp;
 
@@ -87,20 +87,23 @@ int main()
             const EigenVector x0 = mpc_i->state_dynamics * mpc_i->x0 +
                                    mpc_i->control_dynamics * (u0 + rand_force);
 
-            if (k % 1 == 0)
+            if (k % 1000 == 0)
             {
                 std::cout << "x0 = [" << x0.transpose() << "]\n";
+                std::cout << "u* = " << u0 << "\n";
             }
 
             mpc_i->setInitialState(x0);
         }
+
+        //std::cout << "H = \n" << qp_array->getQP()->hessian << "\n";
 
         qp_array->update();
         osqp->update();
 
         const auto cend = std::chrono::high_resolution_clock::now();
 
-        if (k % 1 == 0)
+        if (k % 1000 == 0)
         {
             const time_t duration = std::chrono::duration_cast<std::chrono::microseconds>(cend - cstart).count();
             const double kHz = (double)(k * 1E3) / (double)(duration);

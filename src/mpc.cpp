@@ -39,28 +39,33 @@ namespace orlqp
     {
         if (this->update.state_objective || this->update.control_objective)
         {
-            this->calculateQPHessian();
             this->update.control_objective = false;
+            this->calculateQPHessian();
+            this->QP->update.hessian = true;
         }
         if (this->update.state_objective || this->update.xf)
         {
-            this->calculateQPGradient();
             this->update.state_objective = false;
             this->update.xf = false;
+            this->calculateQPGradient();
+            this->QP->update.gradient = true;
         }
         if (this->update.state_dynamics || this->update.control_dynamics)
         {
-            this->calculateQPLinearConstraint();
             this->update.state_dynamics = false;
             this->update.control_dynamics = false;
+            this->calculateQPLinearConstraint();
+            this->QP->update.linear_constraint = true;
         }
         if (this->update.x_bounds || this->update.u_bounds || this->update.x0)
         {
-            this->calculateQPLowerBound();
-            this->calculateQPUpperBound();
             this->update.x_bounds = false;
             this->update.u_bounds = false;
             this->update.x0 = false;
+            this->calculateQPLowerBound();
+            this->calculateQPUpperBound();
+            this->QP->update.lower_bound = true;
+            this->QP->update.upper_bound = true;
         }
     }
 
@@ -123,7 +128,6 @@ namespace orlqp
                 }
         }
         this->QP->hessian.setFromTriplets(triplets.begin(), triplets.end());
-        this->QP->update.hessian = true;
     }
 
     void MPCProblem::calculateQPGradient()
@@ -145,7 +149,6 @@ namespace orlqp
                 this->QP->gradient(i, 0) = 0;
             }
         }
-        this->QP->update.gradient = true;
     }
 
     void MPCProblem::calculateQPLinearConstraint()
@@ -186,7 +189,6 @@ namespace orlqp
             triplets.push_back(EigenTriplet(i + (Nn + 1) * Nx, i, 1));
 
         this->QP->linear_constraint.setFromTriplets(triplets.begin(), triplets.end());
-        this->QP->update.linear_constraint = true;
     }
 
     void MPCProblem::calculateQPLowerBound()
@@ -208,7 +210,6 @@ namespace orlqp
 
         this->QP->lower_bound.block(0, 0, Neq, 1) = lower_equality;
         this->QP->lower_bound.block(Neq, 0, Nineq, 1) = lower_inequality;
-        this->QP->update.lower_bound = true;
     }
 
     void MPCProblem::calculateQPUpperBound()
@@ -230,7 +231,6 @@ namespace orlqp
 
         this->QP->upper_bound.block(0, 0, Neq, 1) = upper_equality;
         this->QP->upper_bound.block(Neq, 0, Nineq, 1) = upper_inequality;
-        this->QP->update.upper_bound = true;
     }
 
 }
