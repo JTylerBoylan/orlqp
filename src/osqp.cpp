@@ -55,8 +55,7 @@ namespace orlqp
         {
             QP->update.hessian = false;
             convertEigenSparseToCSC(QP->hessian, this->P, this->Pnnz, this->Px, this->Pi, this->Pp);
-            //flag = osqp_update_data_mat(this->solver, this->Px, this->Pi, this->Pnnz, OSQP_NULL, OSQP_NULL, OSQP_NULL);
-            // ^ Need to fix this. This is incorrect (Get segmentation fault / double free errors)
+            flag = osqp_update_data_mat(this->solver, this->Px, this->Pi, this->Pnnz, OSQP_NULL, OSQP_NULL, OSQP_NULL);
         }
         if (QP->update.gradient)
         {
@@ -68,8 +67,7 @@ namespace orlqp
         {
             QP->update.linear_constraint = false;
             convertEigenSparseToCSC(QP->linear_constraint, this->A, this->Annz, this->Ax, this->Ai, this->Ap);
-            //flag = osqp_update_data_mat(this->solver, this->Px, this->Pi, this->Pnnz, OSQP_NULL, OSQP_NULL, OSQP_NULL);
-            // ^ Need to fix this. This is incorrect (Get segmentation fault / double free errors)
+            flag = osqp_update_data_mat(this->solver, OSQP_NULL, OSQP_NULL, OSQP_NULL, this->Ax, this->Ai, this->Annz);
         }
         if (QP->update.lower_bound && QP->update.upper_bound)
         {
