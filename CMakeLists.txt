@@ -24,6 +24,7 @@ target_include_directories(orlqp PUBLIC
 target_link_libraries(orlqp PUBLIC osqp::osqp Eigen3::Eigen)
 set_target_properties(orlqp PROPERTIES
     INSTALL_RPATH_USE_LINK_PATH TRUE
+    INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib;/usr/local/lib"
 )
 
 include(CMakePackageConfigHelpers)
