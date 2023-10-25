@@ -99,6 +99,7 @@ namespace orlqp
     {
         this->xf = xf;
         this->calculateQPGradient();
+        this->QP->update.gradient = true;
     }
 
     void MPCProblem::calculateQPHessian()
