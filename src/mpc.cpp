@@ -6,6 +6,8 @@ namespace orlqp
     MPCProblem::MPCProblem(const int Nx, const int Nu, const int N)
         : num_states(Nx), num_controls(Nu), num_nodes(N)
     {
+        this->x0.resize(Nx);
+        this->xf.resize(Nx);
         this->state_objective.resize(Nx, Nx);
         this->control_objective.resize(Nu, Nu);
         this->state_dynamics.resize(Nx, Nx);
