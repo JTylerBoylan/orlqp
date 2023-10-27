@@ -41,7 +41,7 @@ namespace orlqp
         const int num_states;
         const int num_controls;
         const int num_nodes;
-        EigenVector x0, xf;
+        EigenVector x0, xf, uf;
         EigenMatrix state_objective;
         EigenMatrix control_objective;
         EigenMatrix state_dynamics;
@@ -72,6 +72,8 @@ namespace orlqp
         void setInitialState(const EigenVector &x0);
 
         void setDesiredState(const EigenVector &xf);
+
+        void setDesiredControl(const EigenVector &uf);
 
     private:
         QPProblem::Ptr QP;
