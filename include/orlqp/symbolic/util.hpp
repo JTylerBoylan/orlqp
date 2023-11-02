@@ -9,13 +9,17 @@ namespace orlqp
 {
     SymbolVector createSymbolVector(const int, const std::string &);
 
-    GinacMatrix calculateExpressionGradient(GinacEx &, SymbolVector &);
+    GinacMatrix calculateExpressionGradient(const GinacEx &, const SymbolVector &);
 
-    GinacMatrix calculateVectorJacobian(GinacMatrix &, SymbolVector &);
+    GinacMatrix calculateVectorJacobian(const GinacMatrix &, const SymbolVector &);
 
-    GinacMatrix calculateExpressionHessian(GinacEx &, SymbolVector &);
+    GinacMatrix calculateExpressionHessian(const GinacEx &, const SymbolVector &);
 
     SymbolVector combineSymbolVectors(const std::vector<SymbolVector> &);
+
+    GinacEx evaluateExpression(const GinacEx &, const SymbolVector &, const std::vector<Float> &);
+
+    GinacMatrix evaluateMatrix(const GinacMatrix &, const SymbolVector &, const std::vector<Float> &);
 }
 
 #endif

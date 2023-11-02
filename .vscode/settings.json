@@ -59,7 +59,8 @@
         "typeinfo": "cpp",
         "condition_variable": "cpp",
         "fstream": "cpp",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "iomanip": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++-11"
 }

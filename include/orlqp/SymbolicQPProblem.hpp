@@ -28,16 +28,29 @@ namespace orlqp
     public:
         using Ptr = std::shared_ptr<SymbolicQPProblem>;
 
-        SymbolVector x;
-        SymbolVector c;
+        const SymbolVector x;
+        const SymbolVector c;
+
         GinacEx objective;
         GinacMatrix constraints;
         GinacMatrix lower_bound;
         GinacMatrix upper_bound;
 
-        SymbolicQPProblem();
+        struct
+        {
+            bool objective = false,
+                 constraints = false,
+                 lower_bound = false,
+                 upper_bound = false;
+        } update;
+
+        SymbolicQPProblem(const SymbolVector &x, const SymbolVector &c);
 
         QPProblem::Ptr getQP();
+
+        void updateQP();
+
+        void evaluateConstants(const std::vector<Float> &);
 
     private:
         GinacMatrix sym_hessian;
@@ -57,6 +70,8 @@ namespace orlqp
         void calculateQPLinearConstraint();
         void calculateQPLowerBound();
         void calculateQPUpperBound();
+
+        std::vector<Float> ceval;
     };
 
 }
