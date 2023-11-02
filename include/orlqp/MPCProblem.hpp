@@ -79,13 +79,9 @@ namespace orlqp
         QPProblem::Ptr QP;
 
         void calculateQPHessian();
-
         void calculateQPGradient();
-
         void calculateQPLinearConstraint();
-
         void calculateQPLowerBound();
-
         void calculateQPUpperBound();
     };
 
