@@ -16,7 +16,7 @@ int main(void)
 
     // Params
     const int nodes_per_step = 2;
-    const int num_steps = 2;
+    const int num_steps = 3;
     const int num_nodes = nodes_per_step * num_steps;
 
     /* Objective Function */
@@ -73,6 +73,8 @@ int main(void)
     {
         J_effort += w_effort[i] * (u[i] - u_ref[i]) * (u[i] - u_ref[i]);
     }
+
+    printSymbolicMatrix(u_ref);
 
     auto rho_input = createSymbolVector(num_nodes, "rho_i");
     auto w_input = createSymbolVector(num_nodes, "Winp"); // const
@@ -147,6 +149,10 @@ int main(void)
     sym_qp->lower_bound = lower_bound;
     sym_qp->upper_bound = upper_bound;
 
+    // Print each row on a new line
+    auto m = calculateExpressionHessian(J, x);
+    printSymbolicMatrix(m);
+
     /* Constants Eval */
 
     std::vector<Float> const_eval(c.size(), 0.0);
@@ -160,7 +166,7 @@ int main(void)
         const_eval[ci++] = 0.0; // vy
     }
     // sx_ref
-    const Float stride_length = 0.0;
+    const Float stride_length = 0.5;
     for (int i = 0; i < num_steps; i++)
         const_eval[ci++] = stride_length * i;
     // sy_ref
@@ -184,7 +190,7 @@ int main(void)
         const_eval[ci++] = 1.0;
     // P_footx, P_footy, r_max, u_off
     const_eval[ci++] = 0.0;
-    const_eval[ci++] = 0.0;
+    const_eval[ci++] = 0.1;
     const_eval[ci++] = 1.0;
     const_eval[ci++] = 0.0;
 
@@ -202,6 +208,19 @@ int main(void)
               << qp->lower_bound << std::endl;
     std::cout << "Upper Bound:\n"
               << qp->upper_bound << std::endl;
+
+    // Perform a Cholesky decomposition of matrix P
+    Eigen::SimplicialLLT<Eigen::SparseMatrix<double>> llt_of_P(qp->hessian);
+
+    // Check if the decomposition was successful
+    if (llt_of_P.info() == Eigen::Success)
+    {
+        std::cout << "The hessian is positive definite." << std::endl;
+    }
+    else
+    {
+        std::cout << "The hessian is not positive definite." << std::endl;
+    }
 
     OSQP::Ptr osqp = std::make_shared<OSQP>();
     osqp->getSettings()->verbose = true;

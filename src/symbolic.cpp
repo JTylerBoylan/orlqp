@@ -83,6 +83,16 @@ namespace orlqp
         return matrix_out;
     }
 
+    void printSymbolicMatrix(const GinacMatrix &m)
+    {
+        for (int i = 0; i < m.rows(); ++i)
+        {
+            for (int j = 0; j < m.cols(); ++j)
+                std::cout << m(i, j) << (j < m.cols() - 1 ? " " : "");
+            std::cout << std::endl;
+        }
+    }
+
 }
 
 /* SYMBOLIC QP PROBLEM */
@@ -209,7 +219,6 @@ namespace orlqp
                 }
             }
         this->QP->hessian.setFromTriplets(triplets.begin(), triplets.end());
-        this->QP->hessian = this->QP->hessian.triangularView<Eigen::Upper>();
     }
     void SymbolicQPProblem::calculateQPGradient()
     {
