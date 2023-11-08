@@ -3,6 +3,8 @@
 #include "orlqp/symbolic/util.hpp"
 #include "orlqp/SymbolicQPProblem.hpp"
 
+#define INF 1E8
+
 using namespace orlqp;
 
 int main(void)
@@ -57,22 +59,14 @@ int main(void)
             sum_sx += sx[j];
             sum_sy += sy[j];
         }
-        u_ref[2 * i - 1] = p_foot[0] + sum_sx;
-        u_ref[2 * i] = p_foot[1] + sum_sy;
+        u_ref[2 * i] = p_foot[0] + sum_sx;
+        u_ref[2 * i + 1] = p_foot[1] + sum_sy;
     }
     auto w_effort = createSymbolVector(num_controls, "Weff"); // const
     GinacEx J_effort;
     for (int i = 0; i < num_controls; i++)
     {
         J_effort += w_effort[i] * (u[i] - u_ref[i]) * (u[i] - u_ref[i]);
-    }
-
-    auto rho_avoid = createSymbolVector(num_nodes, "rho_a");
-    auto w_avoid = createSymbolVector(num_nodes, "Wavd"); // const
-    GinacEx J_avoid;
-    for (int i = 0; i < num_nodes; i++)
-    {
-        J_avoid += w_avoid[i] * rho_avoid[i] * rho_avoid[i];
     }
 
     auto rho_input = createSymbolVector(num_nodes, "rho_i");
@@ -83,19 +77,82 @@ int main(void)
         J_input += w_input[i] * rho_input[i] * rho_input[i];
     }
 
-    GinacEx J = J_target + J_stepx + J_stepy + J_effort + J_avoid + J_input;
+    GinacEx J = J_target + J_stepx + J_stepy + J_effort + J_input;
 
     /* Constraints + Bounds */
-    /* TODO */
 
-    SymbolVector x = combineSymbolVectors({q, u, sx, sy, rho_step, rho_avoid, rho_input});
-    SymbolVector c = combineSymbolVectors({q_ref, sx_ref, sy_ref, p_foot, w_target, w_stepx, w_stepy, w_effort, w_avoid, w_input});
+    const int num_constraints = 3 * num_nodes;
+    GinacMatrix constraints(num_constraints, 1);
+    GinacMatrix lower_bound(num_constraints, 1);
+    GinacMatrix upper_bound(num_constraints, 1);
+
+    for (int i = 0; i < num_nodes; i++)
+    {
+        const int step_i = std::floor(i / nodes_per_step);
+        if (step_i % 2)
+        {
+            // right step
+            lower_bound(i, 0) = -INF;
+            upper_bound(i, 0) = -sy_ref[step_i];
+        }
+        else
+        {
+            // left step
+            lower_bound(i, 0) = sy_ref[step_i];
+            upper_bound(i, 0) = INF;
+        }
+        constraints(i, 0) = sy[step_i] - rho_step[i];
+    }
+
+    GinacSymbol r_max("r_max");
+    for (int i = 0; i < num_nodes; i++)
+    {
+        const int ci = i + num_nodes;
+        lower_bound(ci, 0) = -r_max;
+        upper_bound(ci, 0) = +r_max;
+        constraints(ci, 0) = u[i] - q[i];
+    }
+
+    GinacSymbol u_off("u_off");
+    for (int i = 0; i < num_nodes; i++)
+    {
+        const int ci = i + 2 * num_nodes;
+        lower_bound(ci, 0) = -INF;
+        upper_bound(ci, 0) = u_off;
+        constraints(ci, 0) = abs(u[i] - u_ref[i]) - rho_input[i];
+    }
+
+    SymbolVector con_params = {r_max, u_off};
 
     /* Symbolic QP Problem */
-    /* TODO */
+
+    SymbolVector x = combineSymbolVectors({q, u, sx, sy, rho_step, rho_input});
+    SymbolVector c = combineSymbolVectors({q_ref, sx_ref, sy_ref, p_foot, w_target, w_stepx, w_stepy, w_effort, w_input, con_params});
+    
+    SymbolicQPProblem::Ptr sym_qp = std::make_shared<SymbolicQPProblem>(x, c);
+    sym_qp->objective = J;
+    sym_qp->constraints = constraints;
+    sym_qp->lower_bound = lower_bound;
+    sym_qp->upper_bound = upper_bound;
+    
+    QPProblem::Ptr qp = sym_qp->getQP();
+
+
+
+
 
     GinacMatrix hessian = calculateExpressionHessian(J, x);
     GinacMatrix gradient = calculateExpressionGradient(J, x);
+    GinacMatrix linear_constraint = calculateVectorJacobian(constraints, x);
+
+    std::cout << "Hessian:\n"
+              << hessian << std::endl;
+
+    std::cout << "Gradient:\n"
+              << gradient << std::endl;
+
+    std::cout << "Linear Constraint:\n"
+              << linear_constraint << std::endl;
 
     return 0;
 }
