@@ -74,10 +74,10 @@ namespace orlqp
         for (int r = 0; r < matrix.rows(); r++)
             for (int c = 0; c < matrix.cols(); c++)
             {
-                matrix_out(r,c) = matrix(r,c);
+                matrix_out(r, c) = matrix(r, c);
                 for (int i = 0; i < vars.size(); i++)
                 {
-                    matrix_out(r, c) = matrix_out(r,c).subs({{vars[i], cnsts[i]}});
+                    matrix_out(r, c) = matrix_out(r, c).subs({{vars[i], cnsts[i]}});
                 }
             }
         return matrix_out;
@@ -91,7 +91,7 @@ namespace orlqp
 {
 
     SymbolicQPProblem::SymbolicQPProblem(const SymbolVector &vars, const SymbolVector &cons)
-        : x(vars), c(cons)
+        : x(vars), c(cons), ceval(cons.size(), 0.0)
     {
     }
 
@@ -124,24 +124,29 @@ namespace orlqp
             calculateQPHessian();
             calculateQPGradient();
             this->update.objective = false;
+            this->QP->update.hessian = true;
+            this->QP->update.gradient = true;
         }
         if (this->update.constraints)
         {
             calculateSymbolicLinearConstraint();
             calculateQPLinearConstraint();
             this->update.constraints = false;
+            this->QP->update.linear_constraint = true;
         }
         if (this->update.lower_bound)
         {
             calculateSymbolicLowerBound();
             calculateQPLowerBound();
             this->update.lower_bound = false;
+            this->QP->update.lower_bound = true;
         }
         if (this->update.upper_bound)
         {
             calculateSymbolicUpperBound();
             calculateQPUpperBound();
             this->update.upper_bound = false;
+            this->QP->update.upper_bound = true;
         }
     }
 
@@ -153,6 +158,11 @@ namespace orlqp
         calculateQPLinearConstraint();
         calculateQPLowerBound();
         calculateQPUpperBound();
+        this->QP->update.hessian = true;
+        this->QP->update.gradient = true;
+        this->QP->update.linear_constraint = true;
+        this->QP->update.lower_bound = true;
+        this->QP->update.upper_bound = true;
     }
 
     void SymbolicQPProblem::calculateSymbolicHessian()
