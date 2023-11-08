@@ -24,6 +24,14 @@ sudo apt-get install -y libeigen3-dev
 
 [Website](https://osqp.org/)
 
+### GiNaC
+
+[Website](https://www.ginac.de/)
+
+```
+sudo apt-get install -y libginac-dev libcln-dev
+```
+
 ## Installation
 
 ### Build from source

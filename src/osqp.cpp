@@ -110,10 +110,15 @@ namespace orlqp
     void OSQP::convertEigenSparseToCSC(const EigenSparseMatrix &matrix,
                                        OSQPCscMatrix *&M, OSQPInt &Mnnz, OSQPFloat *&Mx, OSQPInt *&Mi, OSQPInt *&Mp)
     {
-        M = new OSQPCscMatrix;
         Mnnz = matrix.nonZeros();
+        
+        delete M;
+        M = new OSQPCscMatrix;
+        delete Mx;
         Mx = new OSQPFloat[Mnnz];
+        delete Mi;
         Mi = new OSQPInt[Mnnz];
+        delete Mp;
         Mp = new OSQPInt[matrix.cols() + 1];
 
         int k = 0;

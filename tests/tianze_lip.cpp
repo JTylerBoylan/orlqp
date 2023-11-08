@@ -1,7 +1,11 @@
 #include <iostream>
 
+#include "orlqp/orlqp.hpp"
 #include "orlqp/symbolic/util.hpp"
 #include "orlqp/SymbolicQPProblem.hpp"
+
+#include <chrono>
+#include <time.h>
 
 #define INF 1E8
 
@@ -11,8 +15,8 @@ int main(void)
 {
 
     // Params
-    const int nodes_per_step = 4;
-    const int num_steps = 3;
+    const int nodes_per_step = 2;
+    const int num_steps = 2;
     const int num_nodes = nodes_per_step * num_steps;
 
     /* Objective Function */
@@ -28,8 +32,8 @@ int main(void)
     }
 
     auto sx = createSymbolVector(num_steps, "sx");
-    auto sx_ref = createSymbolVector(num_steps, "Sxr");     // const
-    auto w_stepx = createSymbolVector(num_states, "Wstpx"); // const
+    auto sx_ref = createSymbolVector(num_steps, "Sxr");    // const
+    auto w_stepx = createSymbolVector(num_steps, "Wstpx"); // const
     GinacEx J_stepx;
     for (int i = 0; i < num_steps; i++)
     {
@@ -48,7 +52,8 @@ int main(void)
 
     const int num_controls = num_nodes * 2;
     auto u = createSymbolVector(num_controls, "u");
-    auto p_foot = createSymbolVector(2, "Pft"); // const
+    auto p_foot_x = GinacSymbol("Pftx"); // const
+    auto p_foot_y = GinacSymbol("Pfty"); // const
     GinacMatrix u_ref(num_controls, 1);
     for (int i = 0; i < num_nodes; i++)
     {
@@ -59,8 +64,8 @@ int main(void)
             sum_sx += sx[j];
             sum_sy += sy[j];
         }
-        u_ref[2 * i] = p_foot[0] + sum_sx;
-        u_ref[2 * i + 1] = p_foot[1] + sum_sy;
+        u_ref[2 * i] = p_foot_x + sum_sx;
+        u_ref[2 * i + 1] = p_foot_y + sum_sy;
     }
     auto w_effort = createSymbolVector(num_controls, "Weff"); // const
     GinacEx J_effort;
@@ -81,7 +86,7 @@ int main(void)
 
     /* Constraints + Bounds */
 
-    const int num_constraints = 3 * num_nodes;
+    const int num_constraints = 4 * num_nodes;
     GinacMatrix constraints(num_constraints, 1);
     GinacMatrix lower_bound(num_constraints, 1);
     GinacMatrix upper_bound(num_constraints, 1);
@@ -119,40 +124,107 @@ int main(void)
         const int ci = i + 2 * num_nodes;
         lower_bound(ci, 0) = -INF;
         upper_bound(ci, 0) = u_off;
-        constraints(ci, 0) = abs(u[i] - u_ref[i]) - rho_input[i];
+        constraints(ci, 0) = u[i] - u_ref[i] - rho_input[i];
+    }
+    for (int i = 0; i < num_nodes; i++)
+    {
+        const int ci = i + 3 * num_nodes;
+        lower_bound(ci, 0) = -INF;
+        upper_bound(ci, 0) = u_off;
+        constraints(ci, 0) = -u[i] + u_ref[i] - rho_input[i];
     }
 
-    SymbolVector con_params = {r_max, u_off};
+    SymbolVector con_params = {p_foot_x, p_foot_y, r_max, u_off};
 
     /* Symbolic QP Problem */
 
     SymbolVector x = combineSymbolVectors({q, u, sx, sy, rho_step, rho_input});
-    SymbolVector c = combineSymbolVectors({q_ref, sx_ref, sy_ref, p_foot, w_target, w_stepx, w_stepy, w_effort, w_input, con_params});
-    
+    SymbolVector c = combineSymbolVectors({q_ref, sx_ref, sy_ref, w_target, w_stepx, w_stepy, w_effort, w_input, con_params});
+
     SymbolicQPProblem::Ptr sym_qp = std::make_shared<SymbolicQPProblem>(x, c);
     sym_qp->objective = J;
     sym_qp->constraints = constraints;
     sym_qp->lower_bound = lower_bound;
     sym_qp->upper_bound = upper_bound;
-    
+
+    /* Constants Eval */
+
+    std::vector<Float> const_eval(c.size(), 0.0);
+    int ci = 0;
+    // q_ref
+    for (int i = 0; i < num_nodes; i++)
+    {
+        const_eval[ci++] = 0.0; // x
+        const_eval[ci++] = 0.0; // y
+        const_eval[ci++] = 0.0; // vx
+        const_eval[ci++] = 0.0; // vy
+    }
+    // sx_ref
+    const Float stride_length = 0.0;
+    for (int i = 0; i < num_steps; i++)
+        const_eval[ci++] = stride_length * i;
+    // sy_ref
+    const Float stride_width = 0.1;
+    for (int i = 0; i < num_steps; i++)
+        const_eval[ci++] = i % 2 ? -stride_width : stride_width;
+    // W_target
+    for (int i = 0; i < num_states; i++)
+        const_eval[ci++] = 1.0;
+    // W_stepx
+    for (int i = 0; i < num_steps; i++)
+        const_eval[ci++] = 1.0;
+    // W_stepy
+    for (int i = 0; i < num_steps; i++)
+        const_eval[ci++] = 1.0;
+    // W_effort
+    for (int i = 0; i < num_controls; i++)
+        const_eval[ci++] = 1.0;
+    // W_input
+    for (int i = 0; i < num_nodes; i++)
+        const_eval[ci++] = 1.0;
+    // P_footx, P_footy, r_max, u_off
+    const_eval[ci++] = 0.0;
+    const_eval[ci++] = 0.0;
+    const_eval[ci++] = 1.0;
+    const_eval[ci++] = 0.0;
+
+    sym_qp->evaluateConstants(const_eval);
+
     QPProblem::Ptr qp = sym_qp->getQP();
 
-
-
-
-
-    GinacMatrix hessian = calculateExpressionHessian(J, x);
-    GinacMatrix gradient = calculateExpressionGradient(J, x);
-    GinacMatrix linear_constraint = calculateVectorJacobian(constraints, x);
-
     std::cout << "Hessian:\n"
-              << hessian << std::endl;
-
+              << qp->hessian << std::endl;
     std::cout << "Gradient:\n"
-              << gradient << std::endl;
+              << qp->gradient << std::endl;
+    std::cout << "Lin. Constraint:\n"
+              << qp->linear_constraint << std::endl;
+    std::cout << "Lower Bound:\n"
+              << qp->lower_bound << std::endl;
+    std::cout << "Upper Bound:\n"
+              << qp->upper_bound << std::endl;
 
-    std::cout << "Linear Constraint:\n"
-              << linear_constraint << std::endl;
+    OSQP::Ptr osqp = std::make_shared<OSQP>();
+    osqp->getSettings()->verbose = true;
+    osqp->getSettings()->warm_starting = true;
+    osqp->getSettings()->polishing = true;
+
+    osqp->setup(sym_qp->getQP());
+
+    osqp->solve();
+
+    const int runs = 1;
+    const auto cstart = std::chrono::high_resolution_clock::now();
+    for (int r = 0; r < runs; r++)
+    {
+        sym_qp->evaluateConstants(const_eval);
+        osqp->update();
+        osqp->solve();
+    }
+    const auto cend = std::chrono::high_resolution_clock::now();
+    const long dur = std::chrono::duration_cast<std::chrono::microseconds>(cend - cstart).count();
+
+    std::cout << "Run time: " << dur << "us\n";
+    std::cout << "Frequency: " << 1.0 / (dur * 1E-6) << "Hz\n";
 
     return 0;
 }

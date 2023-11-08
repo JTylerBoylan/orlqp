@@ -153,16 +153,23 @@ namespace orlqp
     void SymbolicQPProblem::evaluateConstants(const std::vector<Float> &constants)
     {
         this->ceval = constants;
-        calculateQPHessian();
-        calculateQPGradient();
-        calculateQPLinearConstraint();
-        calculateQPLowerBound();
-        calculateQPUpperBound();
-        this->QP->update.hessian = true;
-        this->QP->update.gradient = true;
-        this->QP->update.linear_constraint = true;
-        this->QP->update.lower_bound = true;
-        this->QP->update.upper_bound = true;
+        if (this->QP)
+        {
+            calculateQPHessian();
+            calculateQPGradient();
+            calculateQPLinearConstraint();
+            calculateQPLowerBound();
+            calculateQPUpperBound();
+            this->QP->update.hessian = true;
+            this->QP->update.gradient = true;
+            this->QP->update.linear_constraint = true;
+            this->QP->update.lower_bound = true;
+            this->QP->update.upper_bound = true;
+        }
+        else
+        {
+            getQP();
+        }
     }
 
     void SymbolicQPProblem::calculateSymbolicHessian()
@@ -202,6 +209,7 @@ namespace orlqp
                 }
             }
         this->QP->hessian.setFromTriplets(triplets.begin(), triplets.end());
+        this->QP->hessian = this->QP->hessian.triangularView<Eigen::Upper>();
     }
     void SymbolicQPProblem::calculateQPGradient()
     {
