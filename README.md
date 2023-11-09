@@ -35,19 +35,25 @@ cd build && cmake ..
 make install
 ```
 
-### Add to CMake
+### Build in Docker
+
+```
+# Check for updates
+ADD https://api.github.com/repos/JTylerBoylan/orlqp/git/refs/heads/main version.json
+
+# Clone and compile library
+RUN git clone https://github.com/JTylerBoylan/orlqp
+RUN cd orlqp && mkdir build
+RUN cd orlqp/build && cmake ..
+RUN cd orlqp/build && cmake --build . --target install
+```
+
+*NOTE: You may need to add `RUN ldconfig` to the Dockerfile if you get a linking error.*
+
+## CMake
 
 ```
 find_package(orlqp REQUIRED)
 ...
 target_link_libraries(my_executable PUBLIC orlqp::orlqp ...)
 ```
-
-## Docker (Dev)
-
-```
-sudo chmod +x run_dev.sh
-./run_dev.sh
-```
-
-*Or `./cuda_run_dev.sh` for large matrices (thousands of decision variables)*

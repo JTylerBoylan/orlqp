@@ -6,6 +6,9 @@ namespace orlqp
     MPCProblem::MPCProblem(const int Nx, const int Nu, const int N)
         : num_states(Nx), num_controls(Nu), num_nodes(N)
     {
+        this->x0.resize(Nx);
+        this->xf.resize(Nx);
+        this->uf.resize(Nu);
         this->state_objective.resize(Nx, Nx);
         this->control_objective.resize(Nu, Nu);
         this->state_dynamics.resize(Nx, Nx);
@@ -97,6 +100,14 @@ namespace orlqp
     {
         this->xf = xf;
         this->calculateQPGradient();
+        this->QP->update.gradient = true;
+    }
+
+    void MPCProblem::setDesiredControl(const EigenVector &uf)
+    {
+        this->uf = uf;
+        this->calculateQPGradient();
+        this->QP->update.gradient = true;
     }
 
     void MPCProblem::calculateQPHessian()
@@ -132,22 +143,21 @@ namespace orlqp
 
     void MPCProblem::calculateQPGradient()
     {
-        const int n = this->QP->num_variables;
         const int Nx = this->num_states;
         const int Nu = this->num_controls;
         const int Nn = this->num_nodes;
+        const int Nnx = Nx * (Nn + 1);
         const EigenVector Gx = this->state_objective * -(this->xf);
-        for (int i = 0; i < n; i++)
+        const EigenVector Gu = this->control_objective * -(this->uf);
+        for (int xi = 0; xi < Nnx; xi++)
         {
-            if (i < Nx * (Nn + 1))
-            {
-                int gIdx = i % Nx;
-                this->QP->gradient(i, 0) = Gx(gIdx, 0);
-            }
-            else
-            {
-                this->QP->gradient(i, 0) = 0;
-            }
+            int gIdx = xi % Nx;
+            this->QP->gradient(xi, 0) = Gx(gIdx);
+        }
+        for (int ui = 0; ui < Nu * Nn; ui++)
+        {
+            int gIdx = ui % Nu;
+            this->QP->gradient(Nnx + ui, 0) = Gu(gIdx);
         }
     }
 
