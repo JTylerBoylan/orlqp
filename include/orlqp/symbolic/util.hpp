@@ -20,6 +20,8 @@ namespace orlqp
     GinacEx evaluateExpression(const GinacEx &, const SymbolVector &, const std::vector<Float> &);
 
     GinacMatrix evaluateMatrix(const GinacMatrix &, const SymbolVector &, const std::vector<Float> &);
+
+    void printSymbolicMatrix(const GinacMatrix &);
 }
 
 #endif

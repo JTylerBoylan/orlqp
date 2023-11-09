@@ -3,8 +3,7 @@ FROM ubuntu:latest
 RUN apt-get update -y && \
     apt-get install -y g++ cmake git gdb && \
     apt-get install -y libeigen3-dev && \
-    apt-get install -y libginac-dev libcln-dev && \
-    apt-get install -y pkg-config
+    apt-get install -y libginac-dev libcln-dev
 
 RUN git clone https://github.com/osqp/osqp
 RUN cd osqp && mkdir build

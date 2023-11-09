@@ -42,7 +42,8 @@ namespace orlqp
         this->l = qp->lower_bound.data();
         this->u = qp->upper_bound.data();
 
-        convertEigenSparseToCSC(qp->hessian, this->P, this->Pnnz, this->Px, this->Pi, this->Pp);
+        auto ut_qp = this->QP->hessian.triangularView<Eigen::Upper>();
+        convertEigenSparseToCSC(ut_qp, this->P, this->Pnnz, this->Px, this->Pi, this->Pp);
         convertEigenSparseToCSC(qp->linear_constraint, this->A, this->Annz, this->Ax, this->Ai, this->Ap);
 
         return osqp_setup(&this->solver, this->P, this->q, this->A, this->l, this->u, this->m, this->n, this->settings);
@@ -54,7 +55,8 @@ namespace orlqp
         if (QP->update.hessian)
         {
             QP->update.hessian = false;
-            convertEigenSparseToCSC(QP->hessian, this->P, this->Pnnz, this->Px, this->Pi, this->Pp);
+            auto ut_qp = this->QP->hessian.triangularView<Eigen::Upper>();
+            convertEigenSparseToCSC(ut_qp, this->P, this->Pnnz, this->Px, this->Pi, this->Pp);
             flag = osqp_update_data_mat(this->solver, this->Px, this->Pi, this->Pnnz, OSQP_NULL, OSQP_NULL, OSQP_NULL);
         }
         if (QP->update.gradient)
@@ -110,10 +112,15 @@ namespace orlqp
     void OSQP::convertEigenSparseToCSC(const EigenSparseMatrix &matrix,
                                        OSQPCscMatrix *&M, OSQPInt &Mnnz, OSQPFloat *&Mx, OSQPInt *&Mi, OSQPInt *&Mp)
     {
-        M = new OSQPCscMatrix;
         Mnnz = matrix.nonZeros();
+
+        delete M;
+        M = new OSQPCscMatrix;
+        delete Mx;
         Mx = new OSQPFloat[Mnnz];
+        delete Mi;
         Mi = new OSQPInt[Mnnz];
+        delete Mp;
         Mp = new OSQPInt[matrix.cols() + 1];
 
         int k = 0;
