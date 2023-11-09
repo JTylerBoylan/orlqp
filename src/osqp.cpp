@@ -12,8 +12,8 @@ namespace orlqp
     OSQP::~OSQP()
     {
         osqp_cleanup(solver);
-        delete P;
-        delete A;
+        deleteOSQPCscMatrix(P);
+        deleteOSQPCscMatrix(A);
         delete settings;
     }
 
@@ -43,8 +43,8 @@ namespace orlqp
         this->u = qp->upper_bound.data();
 
         auto ut_qp = this->QP->hessian.triangularView<Eigen::Upper>();
-        convertEigenSparseToCSC(ut_qp, this->P, this->Pnnz, this->Px, this->Pi, this->Pp);
-        convertEigenSparseToCSC(qp->linear_constraint, this->A, this->Annz, this->Ax, this->Ai, this->Ap);
+        convertEigenSparseToCSC(ut_qp, this->P);
+        convertEigenSparseToCSC(qp->linear_constraint, this->A);
 
         return osqp_setup(&this->solver, this->P, this->q, this->A, this->l, this->u, this->m, this->n, this->settings);
     }
@@ -54,47 +54,61 @@ namespace orlqp
         OSQPInt flag;
         if (QP->update.hessian)
         {
-            QP->update.hessian = false;
             auto ut_qp = this->QP->hessian.triangularView<Eigen::Upper>();
-            convertEigenSparseToCSC(ut_qp, this->P, this->Pnnz, this->Px, this->Pi, this->Pp);
-            flag = osqp_update_data_mat(this->solver, this->Px, this->Pi, this->Pnnz, OSQP_NULL, OSQP_NULL, OSQP_NULL);
+            convertEigenSparseToCSC(ut_qp, this->P);
+            flag = osqp_update_data_mat(this->solver, this->P->x, this->P->i, this->P->nzmax, OSQP_NULL, OSQP_NULL, OSQP_NULL);
+            if (flag)
+                return flag;
+            QP->update.hessian = false;
         }
         if (QP->update.gradient)
         {
-            QP->update.gradient = false;
             this->q = QP->gradient.data();
             flag = osqp_update_data_vec(this->solver, this->q, OSQP_NULL, OSQP_NULL);
+            if (flag)
+                return flag;
+            QP->update.gradient = false;
         }
         if (QP->update.linear_constraint)
         {
+            convertEigenSparseToCSC(QP->linear_constraint, this->A);
+            flag = osqp_update_data_mat(this->solver, OSQP_NULL, OSQP_NULL, OSQP_NULL, this->A->x, this->A->i, this->A->nzmax);
+            if (flag)
+                return flag;
             QP->update.linear_constraint = false;
-            convertEigenSparseToCSC(QP->linear_constraint, this->A, this->Annz, this->Ax, this->Ai, this->Ap);
-            flag = osqp_update_data_mat(this->solver, OSQP_NULL, OSQP_NULL, OSQP_NULL, this->Ax, this->Ai, this->Annz);
         }
         if (QP->update.lower_bound && QP->update.upper_bound)
         {
-            QP->update.lower_bound = false;
-            QP->update.upper_bound = false;
             this->u = QP->upper_bound.data();
             this->l = QP->lower_bound.data();
             flag = osqp_update_data_vec(this->solver, OSQP_NULL, this->l, this->u);
+            if (flag)
+                return flag;
+            QP->update.lower_bound = false;
+            QP->update.upper_bound = false;
         }
         if (QP->update.lower_bound)
         {
             QP->update.lower_bound = false;
             this->l = QP->lower_bound.data();
             flag = osqp_update_data_vec(this->solver, OSQP_NULL, this->l, OSQP_NULL);
+            if (flag)
+                return flag;
         }
         if (QP->update.upper_bound)
         {
-            QP->update.upper_bound = false;
             this->u = QP->upper_bound.data();
             flag = osqp_update_data_vec(this->solver, OSQP_NULL, OSQP_NULL, this->u);
+            if (flag)
+                return flag;
+            QP->update.upper_bound = false;
         }
         if (this->update_settings)
         {
-            this->update_settings = false;
             flag = osqp_update_settings(this->solver, this->settings);
+            if (flag)
+                return flag;
+            this->update_settings = false;
         }
         return flag;
     }
@@ -109,33 +123,13 @@ namespace orlqp
         return qp_solution;
     }
 
-    void OSQP::convertEigenSparseToCSC(const EigenSparseMatrix &matrix,
-                                       OSQPCscMatrix *&M, OSQPInt &Mnnz, OSQPFloat *&Mx, OSQPInt *&Mi, OSQPInt *&Mp)
+    void OSQP::printPMatrix()
     {
-        Mnnz = matrix.nonZeros();
-
-        delete M;
-        M = new OSQPCscMatrix;
-        delete Mx;
-        Mx = new OSQPFloat[Mnnz];
-        delete Mi;
-        Mi = new OSQPInt[Mnnz];
-        delete Mp;
-        Mp = new OSQPInt[matrix.cols() + 1];
-
-        int k = 0;
-        Mp[0] = 0;
-        for (int j = 0; j < matrix.outerSize(); ++j)
-        {
-            for (EigenSparseMatrix::InnerIterator it(matrix, j); it; ++it)
-            {
-                Mx[k] = it.value();
-                Mi[k] = it.row();
-                ++k;
-            }
-            Mp[j + 1] = k;
-        }
-        csc_set_data(M, matrix.rows(), matrix.cols(), Mnnz, Mx, Mi, Mp);
+        printOSQPCscMatrix(this->P);
+    }
+    void OSQP::printAMatrix()
+    {
+        printOSQPCscMatrix(this->A);
     }
 
 }

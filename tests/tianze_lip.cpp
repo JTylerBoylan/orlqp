@@ -11,6 +11,8 @@
 
 using namespace orlqp;
 
+extern void print_csc_matrix(const OSQPCscMatrix *M, const char *name);
+
 int main(void)
 {
 
@@ -226,6 +228,7 @@ int main(void)
     osqp->getSettings()->verbose = true;
     osqp->getSettings()->warm_starting = true;
     osqp->getSettings()->polishing = true;
+    osqp->getSettings()->scaling = false;
 
     osqp->setup(sym_qp->getQP());
 
@@ -237,6 +240,7 @@ int main(void)
     {
         sym_qp->evaluateConstants(const_eval);
         osqp->update();
+        //osqp->setup(sym_qp->getQP());
         osqp->solve();
     }
     const auto cend = std::chrono::high_resolution_clock::now();
