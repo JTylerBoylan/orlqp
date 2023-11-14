@@ -181,7 +181,7 @@ namespace orlqp
             getQP();
         }
     }
-
+    
     void SymbolicQPProblem::calculateSymbolicHessian()
     {
         this->sym_hessian = calculateExpressionHessian(this->objective, this->x);
