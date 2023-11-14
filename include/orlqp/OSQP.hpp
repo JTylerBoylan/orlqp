@@ -6,6 +6,7 @@
 #include "orlqp/types.hpp"
 #include "osqp/osqp.h"
 #include "orlqp/QPProblem.hpp"
+#include "orlqp/util.hpp"
 
 namespace orlqp
 {
@@ -42,6 +43,9 @@ namespace orlqp
             return settings;
         }
 
+        void printPMatrix();
+        void printAMatrix();
+
     private:
         QPProblem::Ptr QP;
 
@@ -59,19 +63,7 @@ namespace orlqp
         OSQPFloat *u = nullptr;
 
         OSQPCscMatrix *P = nullptr;
-        OSQPInt Pnnz;
-        OSQPFloat *Px = nullptr;
-        OSQPInt *Pi = nullptr;
-        OSQPInt *Pp = nullptr;
-
         OSQPCscMatrix *A = nullptr;
-        OSQPInt Annz;
-        OSQPFloat *Ax = nullptr;
-        OSQPInt *Ai = nullptr;
-        OSQPInt *Ap = nullptr;
-
-        void convertEigenSparseToCSC(const EigenSparseMatrix &matrix,
-                                     OSQPCscMatrix *&M, OSQPInt &Mnnz, OSQPFloat *&Mx, OSQPInt *&Mi, OSQPInt *&Mp);
     };
 
 }
